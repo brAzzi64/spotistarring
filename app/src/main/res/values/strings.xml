@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SpotiStarring</string>
+    <string name="bottom_menu_recent_albums">Recent Albums</string>
+    <string name="bottom_menu_starred">Starred</string>
+</resources>
