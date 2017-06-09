@@ -26,6 +26,8 @@ public class Album {
 
   public final String uri;
 
+  public transient boolean starred;
+
   public Album(String albumType, List<Artist> artists, String href, String id, String name, String uri) {
     this.albumType = albumType;
     this.artists = artists;

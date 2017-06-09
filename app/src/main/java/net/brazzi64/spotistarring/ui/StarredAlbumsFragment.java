@@ -14,19 +14,18 @@ import android.view.animation.DecelerateInterpolator;
 
 import net.brazzi64.spotistarring.BR;
 import net.brazzi64.spotistarring.MainActivity;
-import net.brazzi64.spotistarring.data.model.Album;
-import net.brazzi64.spotistarring.databinding.FragmentRecentAlbumsBinding;
-import net.brazzi64.spotistarring.viewmodels.RecentAlbumsViewModel;
+import net.brazzi64.spotistarring.databinding.FragmentStarredBinding;
+import net.brazzi64.spotistarring.viewmodels.StarredAlbumsViewModel;
 
 import javax.inject.Inject;
 
 import jp.wasabeef.recyclerview.animators.SlideInUpAnimator;
 
 
-public class RecentAlbumsFragment extends Fragment implements AlbumsAdapter.AlbumStarClickedCallback {
+public class StarredAlbumsFragment extends Fragment {
 
   @Inject
-  RecentAlbumsViewModel viewModel;
+  StarredAlbumsViewModel viewModel;
 
   private AlbumsAdapter adapter;
 
@@ -41,17 +40,17 @@ public class RecentAlbumsFragment extends Fragment implements AlbumsAdapter.Albu
 
   @Override
   public void onDestroy() {
-    viewModel.destroy();
     viewModel.removeOnPropertyChangedCallback(albumsCallback);
+    viewModel.destroy();
     super.onDestroy();
   }
 
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-    FragmentRecentAlbumsBinding binding = FragmentRecentAlbumsBinding.inflate(inflater, container, false);
+    FragmentStarredBinding binding = FragmentStarredBinding.inflate(inflater, container, false);
     binding.setViewModel(viewModel);
-    adapter = new AlbumsAdapter(getActivity(), this);
+    adapter = new AlbumsAdapter(getActivity(), null);
     binding.recentAlbumsList.setAdapter(adapter);
     binding.recentAlbumsList.setLayoutManager(new LinearLayoutManager(getActivity()));
     binding.recentAlbumsList.setItemAnimator(createItemAnimator());
@@ -65,10 +64,6 @@ public class RecentAlbumsFragment extends Fragment implements AlbumsAdapter.Albu
     return animator;
   }
 
-  @Override
-  public void onClick(@NonNull Album album) {
-    viewModel.onAlbumStarClicked(album);
-  }
 
   private class AlbumsChangedCallback extends Observable.OnPropertyChangedCallback {
 

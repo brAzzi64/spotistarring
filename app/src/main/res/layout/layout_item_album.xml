@@ -11,7 +11,7 @@
 
     </data>
 
-    <FrameLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="156dp">
 
@@ -21,17 +21,39 @@
             android:scaleType="centerCrop"
             app:albumImage="@{album.images}"/>
 
-        <TextView
+        <ImageView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
+            android:layout_height="64dp"
+            android:layout_alignParentBottom="true"
+            android:src="@drawable/album_scrim"/>
+
+        <ToggleButton
+            android:id="@+id/starButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
             android:layout_margin="8dp"
+            android:background="@drawable/starred_toggle_button"
+            android:checked="@{album.starred}"
+            android:textOff=""
+            android:textOn=""/>
+
+        <TextView
+            android:id="@+id/albumTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="8dp"
+            android:paddingEnd="0dp"
+            android:paddingStart="48dp"
             android:text="@{album.name}"
             android:textAlignment="textEnd"
             android:textAppearance="@style/TextAppearance.AppCompat.Headline"
             android:textColor="@android:color/white"
             tools:text="Album Title"/>
 
-    </FrameLayout>
+    </RelativeLayout>
 
 </layout>

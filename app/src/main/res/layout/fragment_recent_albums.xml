@@ -6,8 +6,8 @@
         <import type="android.view.View"/>
 
         <variable
-            name="isLoading"
-            type="boolean"/>
+            name="viewModel"
+            type="net.brazzi64.spotistarring.viewmodels.RecentAlbumsViewModel"/>
 
     </data>
 
@@ -21,7 +21,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:visibility="@{isLoading ? View.VISIBLE : View.GONE}"/>
+            android:visibility="@{viewModel.isLoading ? View.VISIBLE : View.GONE}"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/loading_error_msg"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large.Inverse"
+            android:visibility="@{viewModel.gotError ? View.VISIBLE : View.GONE}"/>
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recentAlbumsList"

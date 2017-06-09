@@ -1,70 +1,69 @@
 package net.brazzi64.spotistarring.data;
 
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import net.brazzi64.spotistarring.data.model.Album;
-import net.brazzi64.spotistarring.data.model.NewReleasesResponse;
+import net.brazzi64.spotistarring.data.model.responses.AlbumsByIdResponseBy;
+import net.brazzi64.spotistarring.data.model.responses.NewReleasesResponse;
 
-import java.io.IOException;
 import java.util.List;
 
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.logging.HttpLoggingInterceptor;
+import javax.inject.Inject;
+
 import retrofit2.Call;
 import retrofit2.Callback;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class AlbumRepository {
 
-  private static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com";
-  private static final String SPOTIFY_ACCESS_TOKEN = "BQDhlzbvCSpyfuMuZzGimZUr3jEWpymRQJOesrcTOLS6o6OYrHb6BVG9D7UYjdFHhBrcGr4XZFz9_An8VyR0xA";
-
+  private final StarredAlbumsStore starredAlbumsStore;
   private final SpotifyService service;
 
-  public AlbumRepository() {
-
-    Retrofit retrofit = new Retrofit.Builder()
-        .baseUrl(SPOTIFY_API_BASE_URL)
-        .client(createOkHttpClient())
-        .addConverterFactory(GsonConverterFactory.create())
-        .build();
-
-    service = retrofit.create(SpotifyService.class);
+  @Inject
+  public AlbumRepository(@NonNull StarredAlbumsStore starredAlbumsStore) {
+    this.starredAlbumsStore = starredAlbumsStore;
+    this.service = NetworkUtil.createSpotifyService();
   }
 
-  public void getNewReleases(@NonNull RepositoryCallback<List<Album>> callback) {
-    service.getNewReleases().enqueue(new ResponseDelivery(callback));
+  public void fetchNewReleases(@NonNull RepositoryCallback<List<Album>> callback) {
+    service.getNewReleases()
+        .enqueue(new ResponseDelivery<NewReleasesResponse>(callback) {
+          @NonNull
+          @Override
+          public List<Album> onInterceptSuccessfulResponse(@NonNull NewReleasesResponse response) {
+            for (Album album : response.albums.items) {  // decorate
+              album.starred = starredAlbumsStore.isAlbumStarred(album.id);
+            }
+            return response.albums.items;
+          }
+        });
   }
 
-  @NonNull
-  private static OkHttpClient createOkHttpClient() {
-    return new OkHttpClient.Builder()
-        .addInterceptor(new AddAccessTokenHeaderInterceptor())
-        .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-        .build();
+  public void fetchStarredAlbums(@NonNull RepositoryCallback<List<Album>> callback) {
+    List<String> starredAlbumIds = starredAlbumsStore.getStarredAlbumsIds();
+    service.getAlbumsById(TextUtils.join(",", starredAlbumIds))
+        .enqueue(new ResponseDelivery<AlbumsByIdResponseBy>(callback) {
+          @NonNull
+          @Override
+          public List<Album> onInterceptSuccessfulResponse(@NonNull AlbumsByIdResponseBy response) {
+            return response.albums;
+          }
+        });
   }
 
-  private static class AddAccessTokenHeaderInterceptor implements Interceptor {
-
-    AddAccessTokenHeaderInterceptor() { }
-
-    @Override
-    public Response intercept(@NonNull Chain chain) throws IOException {
-      Request request = chain.request()
-          .newBuilder()
-          .addHeader("Authorization", "Bearer " + SPOTIFY_ACCESS_TOKEN)
-          .build();
-
-      return chain.proceed(request);
-    }
+  public void starAlbum(@NonNull Album album) {
+    album.starred = true;
+    starredAlbumsStore.addAlbum(album.id);
   }
 
-  private static class ResponseDelivery implements Callback<NewReleasesResponse> {
+  public void unstarAlbum(@NonNull Album album) {
+    album.starred = false;
+    starredAlbumsStore.removeAlbum(album.id);
+  }
+
+
+  private abstract static class ResponseDelivery<T> implements Callback<T> {
 
     private final RepositoryCallback<List<Album>> callback;
 
@@ -72,18 +71,21 @@ public class AlbumRepository {
       this.callback = callback;
     }
 
+    @NonNull
+    public abstract List<Album> onInterceptSuccessfulResponse(@NonNull T response);
+
     @Override
-    public void onResponse(@NonNull Call<NewReleasesResponse> call, @NonNull retrofit2.Response<NewReleasesResponse> response) {
-      NewReleasesResponse responseBody = response.body();
+    public void onResponse(@NonNull Call<T> call, @NonNull retrofit2.Response<T> response) {
+      T responseBody = response.body();
       if (response.isSuccessful() && responseBody != null) {
-        callback.onFetchReady(responseBody.albums.items);
+        callback.onFetchReady(onInterceptSuccessfulResponse(responseBody));
       } else {
         callback.onFetchFailed(new Exception("Got a bad response - code=" + response.code()));
       }
     }
 
     @Override
-    public void onFailure(@NonNull Call<NewReleasesResponse> call, @NonNull Throwable t) {
+    public void onFailure(@NonNull Call<T> call, @NonNull Throwable t) {
       callback.onFetchFailed(new Exception("Request failed", t));
     }
   }

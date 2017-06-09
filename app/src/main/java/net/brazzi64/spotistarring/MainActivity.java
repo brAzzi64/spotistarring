@@ -13,13 +13,28 @@ import android.text.SpannableString;
 import android.text.style.ImageSpan;
 
 import net.brazzi64.spotistarring.databinding.ActivityMainBinding;
+import net.brazzi64.spotistarring.di.ApplicationComponent;
+import net.brazzi64.spotistarring.di.ApplicationModule;
+import net.brazzi64.spotistarring.di.DaggerApplicationComponent;
 import net.brazzi64.spotistarring.ui.RecentAlbumsFragment;
-import net.brazzi64.spotistarring.ui.StarredFragment;
+import net.brazzi64.spotistarring.ui.StarredAlbumsFragment;
 
 
 public class MainActivity extends AppCompatActivity {
 
   private static final String TAG = "MainActivity";
+
+  private static ApplicationComponent appComponent;
+
+  @NonNull
+  public ApplicationComponent getApplicationComponent() {
+    if (appComponent == null) {
+      appComponent = DaggerApplicationComponent.builder()
+          .applicationModule(new ApplicationModule(getApplication()))
+          .build();
+    }
+    return appComponent;
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
       if (position == 0) {
         return new RecentAlbumsFragment();
       } else if (position == 1) {
-        return new StarredFragment();
+        return new StarredAlbumsFragment();
       }
       return null;
     }
